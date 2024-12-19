@@ -19,7 +19,7 @@ import {LPSCVault} from "./LPSCVault.sol";
 
 contract LPSC is LPSCVault,CCIPReceiver {
     address public router;
-    address constant registryAddress=0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f;
+    address constant registryAddress=0x2e234DAe75C793f67A35089C9d99245E1C58470b;
     address constant aavePoolAddress = 0x794a61358D6845594F94dc1DB02A252b5b4814aD; // Aave V3 Pool on Arbitrum
 
     event ReplySent(
@@ -63,7 +63,7 @@ contract LPSC is LPSCVault,CCIPReceiver {
     }
 
     function reply(
-        address tokenAddress,
+        address tokenAddress, //Address of for exp WETH in the mainnet
         uint256 amount,
         uint64 sourceChainSelector,
         address sender,
@@ -73,6 +73,8 @@ contract LPSC is LPSCVault,CCIPReceiver {
         //     keccak256(abi.encodePacked(tokenAddress, sourceChainSelector))
         // ];
 
+
+        //Address of the WETH in Arbitrum
         address tokenToReturn=LPSCRegistry(registryAddress).getSourceChainToken(tokenAddress,sourceChainSelector);
 
         uint256 currentBalance = IERC20(tokenToReturn).balanceOf(address(this));
@@ -93,7 +95,7 @@ contract LPSC is LPSCVault,CCIPReceiver {
         });
         tokenAmounts[0] = tokenAmount;
 
-        IERC20(tokenToReturn).approve(router, amount+1 ether);
+        IERC20(tokenToReturn).approve(router, amount);
 
         Client.EVM2AnyMessage memory messageReply = Client.EVM2AnyMessage({
             receiver: abi.encode(sender),

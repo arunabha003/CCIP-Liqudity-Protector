@@ -5,6 +5,5 @@ LPSC.sol should be deployed in the Liqudity Chain
 
 
 
-To do:
-1. approve should be done for the GasFee token allownace inside the MonitorCompoundV2.sol constructor not in the test
-2.Learn about the vm.mockCall in the tests.
+compound---> deposit Collateral (ETH)-----> cETH(This signifies you have collateral)
+----->Borrow DAI Token 
