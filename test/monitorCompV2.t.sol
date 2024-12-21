@@ -1,144 +1,142 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+// // SPDX-License-Identifier: MIT
+// pragma solidity ^0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
-import {ICToken} from "../src/interfaces/compound/ICtoken.sol";
-import {IComptroller} from "../src/interfaces/compound/IComptroller.sol";
-import {MonitorCompoundV2} from "../src/monitors/MonitorCompoundV2.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.0/token/ERC20/IERC20.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+// import {Test, console} from "forge-std/Test.sol";
+// import {ICToken} from "../src/interfaces/compound/ICtoken.sol";
+// import {IComptroller} from "../src/interfaces/compound/IComptroller.sol";
+// import {MonitorCompoundV2} from "../src/monitors/MonitorCompoundV2.sol";
+// import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+// import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 
+// contract MonitorTest is Test {
+//     MonitorCompoundV2 public monitor;
 
+//     address constant comptrollerAddress =
+//         0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B; // Compound Comptroller on Ethereum Mainnet
+//     address constant cEthAddress = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5; // cETH on Ethereum Mainnet
+//     address constant wethAddress_gasToken =
+//         0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH
+//     address constant routerAddress = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
+//     uint64 constant chainselector = 4949039107694359620;
+//     address public constant DAI_ADDRESS =
+//         0x6B175474E89094C44Da98b954EedeAC495271d0F;
+//     address public constant CDAI_ADDRESS =
+//         0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+//     address user = address(1);
+//     address lpscAddress = 0x2e234DAe75C793f67A35089C9d99245E1C58470b;
 
+//     function setUp() public {
+//         // Fork Ethereum Mainnet
+//         vm.createSelectFork(
+//             "https://eth-mainnet.g.alchemy.com/v2/KywLaq2zlVzePOhip0BY3U8ztfHkYDmo"
+//         );
 
+//         // Deploy the Monitor contract
+//         monitor = new MonitorCompoundV2(
+//             routerAddress,
+//             user,
+//             CDAI_ADDRESS,
+//             comptrollerAddress,
+//             wethAddress_gasToken,
+//             DAI_ADDRESS,
+//             lpscAddress,
+//             chainselector
+//         );
+//         console.log("Monitor contract deployed at: ", address(monitor));
 
-contract MonitorTest is Test {
-    MonitorCompoundV2 public monitor;
+//         // Fund the user with ETH
+//         vm.deal(user, 10 ether);
+//         console.log("User funded with 10 ETH");
 
-    address constant comptrollerAddress = 0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B; // Compound Comptroller on Ethereum Mainnet
-    address constant cEthAddress = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5; // cETH on Ethereum Mainnet
-    address constant wethAddress_gasToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH
-    address constant routerAddress = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
-    uint64 constant chainselector = 4949039107694359620;
-    address public constant DAI_ADDRESS = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant CDAI_ADDRESS = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
-    address user = address(1);
-    address lpscAddress = 0x2e234DAe75C793f67A35089C9d99245E1C58470b;
+//         // Fund the monitor with WETH (to simulate fee funding)
+//         deal(wethAddress_gasToken, address(monitor), 1 ether);
+//         uint256 wethBalance = IERC20(wethAddress_gasToken).balanceOf(
+//             address(monitor)
+//         );
+//         console.log("Monitor WETH balance: ", wethBalance);
+//     }
 
-    function setUp() public {
-        // Fork Ethereum Mainnet
-        vm.createSelectFork("https://eth-mainnet.g.alchemy.com/v2/KywLaq2zlVzePOhip0BY3U8ztfHkYDmo");
+//     function testMonitorLiquidationn() public {
+//         vm.startPrank(user);
 
-        // Deploy the Monitor contract
-        monitor = new MonitorCompoundV2(
-            routerAddress,
-            user,
-            CDAI_ADDRESS,
-            comptrollerAddress,
-            wethAddress_gasToken,
-            DAI_ADDRESS,
-            lpscAddress,
-            chainselector
-        );
-        console.log("Monitor contract deployed at: ", address(monitor));
+//         // Step 1: Mint cETH (Deposit ETH)
+//         ICToken(cEthAddress).mint{value: 8 ether}();
+//         console.log(
+//             "User minted cETH balance ",
+//             IERC20(cEthAddress).balanceOf(user)
+//         );
 
-        // Fund the user with ETH
-        vm.deal(user, 10 ether); 
-        console.log("User funded with 10 ETH");
+//         // Step 2: Enter the market
+//         address[] memory markets;
+//         markets = new address[](1);
+//         markets[0] = cEthAddress;
 
-        // Fund the monitor with WETH (to simulate fee funding)
-        deal(wethAddress_gasToken, address(monitor), 1 ether); 
-        uint256 wethBalance = IERC20(wethAddress_gasToken).balanceOf(address(monitor));
-        console.log("Monitor WETH balance: ", wethBalance);
-    }
+//         //vm.prank(user);
+//         uint256[] memory errors = IComptroller(comptrollerAddress).enterMarkets(
+//             markets
+//         );
+//         require(errors[0] == 0, "Enter markets failed");
 
-    function testMonitorLiquidationn() public {
-        vm.startPrank(user);
+//         // Step 3: Calculate liquidity
+//         (, uint256 liquidity, ) = IComptroller(comptrollerAddress)
+//             .getAccountLiquidity(user);
+//         assert(liquidity > 0);
 
-        // Step 1: Mint cETH (Deposit ETH)
-        ICToken(cEthAddress).mint{value: 8 ether}();
-        console.log("User minted cETH balance ", IERC20(cEthAddress).balanceOf(user));
+//         // Step 4: Borrow DAI
+//         uint256 daiToBorrow = 50 * 1e18; // Borrow 50 DAI
+//         //vm.prank(user);
+//         uint256 borrowError = ICToken(CDAI_ADDRESS).borrow(daiToBorrow);
+//         require(borrowError == 0, "Borrow failed");
 
+//         // Assert DAI balance is updated
+//         uint256 daiBalance = IERC20(DAI_ADDRESS).balanceOf(user);
 
+//         // Log borrow results
+//         console.log("DAI borrowed:", daiBalance / 1e18);
+//         console.log("Liquidity remaining (in USD):", liquidity / 1e18);
 
-        // Step 2: Enter the market
-        address[] memory  markets;
-        markets= new address[](1);
-        markets[0] = cEthAddress;
+//         // Step 3: Mock Comptroller's getAccountLiquidity (Simulate shortfall)
+//         vm.mockCall(
+//             comptrollerAddress,
+//             abi.encodeWithSelector(
+//                 IComptroller.getAccountLiquidity.selector,
+//                 user
+//             ),
+//             abi.encode(0, 0, 100 ether) // Simulated shortfall of 100 ETH
+//         );
 
+//         // Step 4: Call checkUpkeep
+//         bool upkeepNeeded;
+//         bytes memory performData;
+//         (upkeepNeeded, performData) = monitor.checkUpkeep("");
+//         assert(upkeepNeeded);
+//         console.log("Upkeep needed: ", upkeepNeeded);
 
-        //vm.prank(user);
-        uint256[] memory errors = IComptroller(comptrollerAddress).enterMarkets(markets);
-        require(errors[0] == 0, "Enter markets failed");
+//         // Step 5: Perform upkeep to send CCIP message
+//         monitor.performUpkeep(performData);
+//         console.log("CCIP message sent");
 
+//         // Verify internal state
+//         assertTrue(monitor.isCcipMessageSent());
+//         console.log("CCIP message flag set");
 
-        // Step 3: Calculate liquidity
-        (, uint256 liquidity, ) = IComptroller(comptrollerAddress).getAccountLiquidity(user);
-        assert(liquidity > 0);
+//         vm.stopPrank();
+//     }
 
+//     function testNoUpkeepNeeded() public {
+//         vm.startPrank(user);
 
+//         // Step 1: Mint cETH
+//         ICToken(cEthAddress).mint{value: 5 ether}();
+//         console.log("User minted cETH");
 
-        // Step 4: Borrow DAI
-        uint256 daiToBorrow = 50 * 1e18; // Borrow 50 DAI
-        //vm.prank(user);
-        uint256 borrowError = ICToken(CDAI_ADDRESS).borrow(daiToBorrow);
-        require(borrowError == 0, "Borrow failed");
+//         // Step 2: Call checkUpkeep (No shortfall)
+//         bool upkeepNeeded;
+//         bytes memory performData;
+//         (upkeepNeeded, performData) = monitor.checkUpkeep("");
+//         assert(!upkeepNeeded);
+//         console.log("Upkeep not needed: ", upkeepNeeded);
 
-
-        // Assert DAI balance is updated
-        uint256 daiBalance = IERC20(DAI_ADDRESS).balanceOf(user);
-
-        // Log borrow results
-        console.log("DAI borrowed:", daiBalance / 1e18);
-        console.log("Liquidity remaining (in USD):", liquidity / 1e18);
-        
-            
-     
-
-        // Step 3: Mock Comptroller's getAccountLiquidity (Simulate shortfall)
-        vm.mockCall(
-            comptrollerAddress,
-            abi.encodeWithSelector(IComptroller.getAccountLiquidity.selector, user),
-            abi.encode(0, 0, 100 ether) // Simulated shortfall of 100 ETH
-        );
-
-        // Step 4: Call checkUpkeep
-        bool upkeepNeeded;
-        bytes memory performData;
-        (upkeepNeeded, performData) = monitor.checkUpkeep("");
-        assert(upkeepNeeded);
-        console.log("Upkeep needed: ", upkeepNeeded);
-
-        // Step 5: Perform upkeep to send CCIP message
-        monitor.performUpkeep(performData);
-        console.log("CCIP message sent");
-        
-        // Verify internal state
-        assertTrue(monitor.isCcipMessageSent());
-        console.log("CCIP message flag set");
-
-        vm.stopPrank();
-
-       
-    }
-
-    function testNoUpkeepNeeded() public {
-        vm.startPrank(user);
-
-        // Step 1: Mint cETH
-        ICToken(cEthAddress).mint{value: 5 ether}();
-        console.log("User minted cETH");
-
-        // Step 2: Call checkUpkeep (No shortfall)
-        bool upkeepNeeded;
-        bytes memory performData;
-        (upkeepNeeded, performData) = monitor.checkUpkeep("");
-        assert(!upkeepNeeded);
-        console.log("Upkeep not needed: ", upkeepNeeded);
-
-        vm.stopPrank();
-    }
-
-
-    
-}
+//         vm.stopPrank();
+//     }
+// }

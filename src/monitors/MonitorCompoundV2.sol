@@ -6,7 +6,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/inter
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.0/token/ERC20/IERC20.sol";
+import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {IComptroller} from "../interfaces/compound/IComptroller.sol";
 import {ICToken} from "../interfaces/compound/ICtoken.sol";
 import {Withdraw} from "../utils/Withdraw.sol";
@@ -29,6 +29,7 @@ contract MonitorCompoundV2 is
     address immutable i_lpsc;
     uint64 immutable i_sourceChainSelector;
     bool private _isCcipMessageSent;
+    address immutable i_router;
 
     mapping(bytes32 messageId => uint256 amountToRepay) internal requested;
 
@@ -51,10 +52,10 @@ contract MonitorCompoundV2 is
         i_tokenAddress = tokenAddress;
         i_lpsc = lpsc;
         i_sourceChainSelector = sourceChainSelector;
+        i_router = router;
 
         // LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
         IERC20(i_gas_Token).approve(i_router, type(uint256).max);
-
     }
 
     function checkUpkeep(
@@ -119,21 +120,19 @@ contract MonitorCompoundV2 is
         ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
     }
 
-
-
     // --------------GETTER FUNCTIONS-------------------
 
     function isCcipMessageSent() external view returns (bool) {
         return _isCcipMessageSent;
     }
 
-    function testCcipReceive(Client.Any2EVMMessage memory receivedMessage) external {
+    function testCcipReceive(
+        Client.Any2EVMMessage memory receivedMessage
+    ) external {
         _ccipReceive(receivedMessage);
     }
-    
-    
+
     receive() external payable {}
 
     fallback() external payable {}
-
 }

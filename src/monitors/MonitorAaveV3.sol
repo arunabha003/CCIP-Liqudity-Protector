@@ -6,7 +6,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkT
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.0/token/ERC20/IERC20.sol";
+import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {IPoolAaveV3} from "../interfaces/aave-v3/IPoolAaveV3.sol";
 import {Withdraw} from "../utils/Withdraw.sol";
 
@@ -38,6 +38,7 @@ contract MonitorAaveV3 is
     address immutable i_lpsc;
     uint64 immutable i_sourceChainSelector;
     bool private _isCcipMessageSent;
+    address immutable i_router;
 
     mapping(bytes32 messageId => uint256 amountToRepay) internal requested;
 
@@ -60,6 +61,7 @@ contract MonitorAaveV3 is
         i_tokenAddress = tokenAddress;
         i_lpsc = lpsc;
         i_sourceChainSelector = sourceChainSelector;
+        i_router = router;
 
         LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
     }
