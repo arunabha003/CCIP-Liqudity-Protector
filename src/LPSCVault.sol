@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.0/token/ERC20/IERC20.sol";
+import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {IPoolAaveV3} from "./interfaces/aave-v3/IPoolAaveV3.sol";
 import {Withdraw} from "./utils/Withdraw.sol";
 
@@ -23,9 +23,6 @@ contract LPSCVault is Withdraw {
     }
 
     function withdrawFromVaultExternal(address asset, uint256 amount) external {
-        withdrawFromVault(asset,amount);
+        withdrawFromVault(asset, amount);
     }
-
-
-    
 }
