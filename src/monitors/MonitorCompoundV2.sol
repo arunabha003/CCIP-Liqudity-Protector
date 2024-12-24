@@ -10,6 +10,7 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 import {IComptroller} from "../interfaces/compound/IComptroller.sol";
 import {ICToken} from "../interfaces/compound/ICtoken.sol";
 import {Withdraw} from "../utils/Withdraw.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 /**
  * THIS IS AN EXAMPLE CONTRACT THAT USES HARDCODED VALUES FOR CLARITY.
@@ -32,6 +33,7 @@ contract MonitorCompoundV2 is
     address immutable i_router;
 
     mapping(bytes32 messageId => uint256 amountToRepay) internal requested;
+    mapping(bytes32 messageId => bool reply1) internal reply;
 
     event MessageSent(bytes32 indexed messageId);
 
@@ -108,15 +110,16 @@ contract MonitorCompoundV2 is
         emit MessageSent(messageId);
     }
 
+    //recieves reply
     function _ccipReceive(
         Client.Any2EVMMessage memory receivedMessage
     ) internal override {
+        console.log("reply recieved");
         _isCcipMessageSent = false;
         bytes32 requestMessageId = abi.decode(receivedMessage.data, (bytes32));
         uint256 amountToRepay = requested[requestMessageId];
-
+        reply[requestMessageId] = true;
         IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
-
         ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
     }
 
@@ -124,6 +127,10 @@ contract MonitorCompoundV2 is
 
     function isCcipMessageSent() external view returns (bool) {
         return _isCcipMessageSent;
+    }
+
+    function isCcipMessagerecieved(bytes32 x) external view returns (bool) {
+        return reply[x];
     }
 
     function testCcipReceive(

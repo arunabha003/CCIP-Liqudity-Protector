@@ -83,6 +83,7 @@ contract CCIPLocalSimulatorFork is Test {
       if (entries[i].topics[0] == CCIPSendRequested.selector) {
         message = abi.decode(entries[i].data, (Internal.EVM2EVMMessage));
         if (!s_processedMessages[message.messageId]) {
+          console.log('event found');
           s_processedMessages[message.messageId] = true;
           break;
         }
@@ -92,11 +93,13 @@ contract CCIPLocalSimulatorFork is Test {
     vm.selectFork(forkId);
     assertEq(vm.activeFork(), forkId);
     console.log(address(i_register));
+    console.log('chain id:', block.chainid);
     console.log(i_register.getNetworkDetails(block.chainid).routerAddress);
     IRouterFork.OffRamp[] memory offRamps = IRouterFork(
       i_register.getNetworkDetails(block.chainid).routerAddress //shouldnt this be simulator fork
     ).getOffRamps();
     length = offRamps.length;
+    console.log('length of offramps array', length);
 
     for (uint256 i = length; i > 0; --i) {
       if (offRamps[i - 1].sourceChainSelector == message.sourceChainSelector) {
@@ -116,6 +119,7 @@ contract CCIPLocalSimulatorFork is Test {
         break;
       }
     }
+    console.log('chain switched and msg routed');
   }
 
   /**

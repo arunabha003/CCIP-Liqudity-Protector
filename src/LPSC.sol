@@ -53,12 +53,18 @@ contract LPSC is LPSCVault, CCIPReceiver {
     function _ccipReceive(
         Client.Any2EVMMessage memory receivedMessage
     ) internal override {
+        console.log("message recieved by lpsc");
         bytes32 messageId = receivedMessage.messageId;
         uint64 sourceChainSelector = receivedMessage.sourceChainSelector;
         (address tokenAddress, uint256 amount, address sender) = abi.decode(
             receivedMessage.data,
             (address, uint256, address)
         );
+        console.log("token address", tokenAddress);
+        console.log("amount", amount);
+        console.log("sender", sender);
+        console.log("source chain sleector:", sourceChainSelector);
+        // console.log("messaageID:", messageId);
 
         reply(tokenAddress, amount, sourceChainSelector, sender, messageId);
     }
@@ -104,15 +110,27 @@ contract LPSC is LPSCVault, CCIPReceiver {
             extraArgs: "",
             feeToken: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1 //weth arbitrum
         });
-
-        bytes32 replyMessageId = IRouterClient(router).ccipSend(
-            sourceChainSelector,
+        console.log(
+            "balance of feetoken:",
+            IERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1).balanceOf(
+                address(this)
+            )
+        );
+        console.log("reply sending");
+        // uint256 fee = IRouterClient(router).getFee(
+        //     5009297550715157269,
+        //     messageReply
+        // );
+        // console.log("fee is ", fee);
+        bytes32 replyMessageId = IRouterClient(router).ccipSend( //the error is here check this
+            5009297550715157269,
             messageReply
         );
+        console.log("reply sent");
 
         emit ReplySent(
             replyMessageId,
-            sourceChainSelector,
+            5009297550715157269,
             messageId,
             sender,
             tokenToReturn,
