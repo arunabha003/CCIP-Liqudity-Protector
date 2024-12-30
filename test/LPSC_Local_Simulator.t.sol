@@ -116,7 +116,7 @@ contract LPSCTestWithSimulator is Test {
 
         // Create the Any2EVMMessage struct
         Client.Any2EVMMessage memory receivedMessage = Client.Any2EVMMessage({
-            messageId: bytes32(keccak256("mockMessageId")),
+            messageId: 0x7966d990fa4ca25d0516a65ec0e70f72346cb60d83513f0418061f6e90a1d2b4,
             sourceChainSelector: 5009297550715157269, //ETH Mainnet chain selector
             sender: abi.encode(address(monitor)),
             data: abi.encode(

@@ -23,6 +23,8 @@ contract LPSC is LPSCVault, CCIPReceiver {
     address constant aavePoolAddress =
         0x794a61358D6845594F94dc1DB02A252b5b4814aD; // Aave V3 Pool on Arbitrum
 
+    IRouterClient sourceRouter;
+
     event ReplySent(
         bytes32 replyMessageId,
         uint64 sourceChainSelector,
@@ -61,7 +63,7 @@ contract LPSC is LPSCVault, CCIPReceiver {
             (address, uint256, address)
         );
         console.log("token address", tokenAddress);
-        console.log("amount", amount);
+        console.log("amount to send", amount);
         console.log("sender", sender);
         console.log("source chain sleector:", sourceChainSelector);
         // console.log("messaageID:", messageId);
@@ -83,10 +85,8 @@ contract LPSC is LPSCVault, CCIPReceiver {
         //Address of the ETHX in Arbitrum
         address tokenToReturn = LPSCRegistry(registryAddress)
             .getSourceChainToken(tokenAddress, sourceChainSelector);
-        console.log("Token to return Arbitrum address:", tokenToReturn);
         uint256 currentBalance = IERC20(tokenToReturn).balanceOf(address(this));
-        console.log("and its balance is:", currentBalance);
-        console.log("and its amount req is:", amount);
+
 
         // If there are not enough funds in LPSC, withdraw additional from Aave vault
         if (currentBalance < amount) {
@@ -107,21 +107,14 @@ contract LPSC is LPSCVault, CCIPReceiver {
             receiver: abi.encode(sender),
             data: abi.encode(messageId),
             tokenAmounts: tokenAmounts,
-            extraArgs: "",
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: 900000})
+            ),
             feeToken: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1 //weth arbitrum
         });
-        console.log(
-            "balance of feetoken:",
-            IERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1).balanceOf(
-                address(this)
-            )
-        );
+
         console.log("reply sending");
-        // uint256 fee = IRouterClient(router).getFee(
-        //     5009297550715157269,
-        //     messageReply
-        // );
-        // console.log("fee is ", fee);
+
         bytes32 replyMessageId = IRouterClient(router).ccipSend( //the error is here check this
             5009297550715157269,
             messageReply

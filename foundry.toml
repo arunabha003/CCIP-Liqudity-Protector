@@ -12,6 +12,7 @@ remappings = [
 
 solc_versions = ['0.4.24', '0.7.0', '0.8.19']
 
+
 [rpc_endpoints]
 ethereumSepolia = "${ETHEREUM_SEPOLIA_RPC_URL}"
 optimismGoerli = "${OPTIMISM_GOERLI_RPC_URL}"
