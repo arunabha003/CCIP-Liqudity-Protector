@@ -13,6 +13,10 @@ remappings = [
 solc_versions = ['0.4.24', '0.7.0', '0.8.19']
 
 [rpc_endpoints]
+
+eth_mainnet = "http://127.0.0.1:8545"
+arbitrum_one = "http://127.0.0.1:8546"
+
 ethereumSepolia = "${ETHEREUM_SEPOLIA_RPC_URL}"
 optimismGoerli = "${OPTIMISM_GOERLI_RPC_URL}"
 avalancheFuji = "${AVALANCHE_FUJI_RPC_URL}"

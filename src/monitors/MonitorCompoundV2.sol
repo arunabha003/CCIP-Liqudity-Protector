@@ -55,14 +55,24 @@ contract MonitorCompoundV2 is
         i_lpsc = lpsc;
         i_sourceChainSelector = sourceChainSelector;
         i_router = router;
-
+        console.log("Gas Token Address:", i_gas_Token);
+        console.log("Router Address:", i_router);
+        // bool approval = IERC20(i_gas_Token).approve(
+        //     i_router,
+        //     type(uint256).max
+        // );
+        // console.log(approval);
         // LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
-        IERC20(i_gas_Token).approve(i_router, type(uint256).max);
     }
 
     function checkUpkeep(
         bytes calldata checkData
     ) external override returns (bool upkeepNeeded, bytes memory performData) {
+        bool approval = IERC20(i_gas_Token).approve(
+            i_router,
+            type(uint256).max
+        );
+        console.log(approval);
         (uint error, uint liquidity, uint shortfall) = IComptroller(
             i_comptrollerAddress
         ).getAccountLiquidity(i_onBehalfOf);
@@ -71,6 +81,11 @@ contract MonitorCompoundV2 is
     }
 
     function performUpkeep(bytes calldata performData) external override {
+        bool approval = IERC20(i_gas_Token).approve(
+            i_router,
+            type(uint256).max
+        );
+        console.log(approval);
         require(
             !_isCcipMessageSent,
             "CCIP Message already sent, waiting for a response"
@@ -93,7 +108,9 @@ contract MonitorCompoundV2 is
             receiver: abi.encode(i_lpsc),
             data: abi.encode(i_tokenAddress, amountNeeded, address(this)),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: 900000})
+            ), //testing
             feeToken: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
             // feeToken:address(0)
         });
@@ -114,13 +131,18 @@ contract MonitorCompoundV2 is
     function _ccipReceive(
         Client.Any2EVMMessage memory receivedMessage
     ) internal override {
+        bool approval = IERC20(i_gas_Token).approve(
+            i_router,
+            type(uint256).max
+        );
+        console.log(approval);
         console.log("reply recieved");
         _isCcipMessageSent = false;
         bytes32 requestMessageId = abi.decode(receivedMessage.data, (bytes32));
         uint256 amountToRepay = requested[requestMessageId];
         reply[requestMessageId] = true;
-        IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
-        ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
+        // IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
+        // ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
     }
 
     // --------------GETTER FUNCTIONS-------------------

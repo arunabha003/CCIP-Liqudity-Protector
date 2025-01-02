@@ -72,21 +72,11 @@ contract FullFlowTest is Test {
         ethereumMainnetForkId = vm.createFork(
             "https://eth-mainnet.g.alchemy.com/v2/KywLaq2zlVzePOhip0BY3U8ztfHkYDmo"
         );
+
         ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
         vm.makePersistent(address(ccipLocalSimulatorFork));
-        vm.selectFork(ethereumMainnetForkId);
-
-        Register.NetworkDetails
-            memory destinationNetworkDetails = ccipLocalSimulatorFork
-                .getNetworkDetails(ethereumMainnetchainId);
-        console.log("Chain ID for ETH", block.chainid);
 
         vm.selectFork(arbitrumForkId);
-
-        Register.NetworkDetails
-            memory sourceNetworkDetails = ccipLocalSimulatorFork
-                .getNetworkDetails(arbitrumMainnetchainId);
-        console.log("Chain ID for Arbitrum", block.chainid);
         registry = new LPSCRegistry();
 
         vault = new LPSCVault(aavePoolAddress);
@@ -99,10 +89,10 @@ contract FullFlowTest is Test {
             user,
             0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643, //ctoken(CDAI ADDRESS)
             0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B, //comptroller FROM COMPOUND DOCS
-            0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, //gas token
+            0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, //gas token weth ka eth mainnet address
             0xA35b1B31Ce002FBF2058D22F30f95D405200A15b, //token address of ethx
             address(lpsc),
-            4949039107694359620 //source chian slecor
+            4949039107694359620 //which chain the message is sent to
         );
         console.log("Monitor contract deployed at: ", address(monitor));
 
@@ -110,37 +100,41 @@ contract FullFlowTest is Test {
         vm.deal(user, 10 ether);
         console.log("User funded with 10 ETH");
 
-        // Fund the monitor with WETH (to simulate fee funding)
-        deal(WETH_GAS_TOKEN_ETH, address(monitor), 100 ether);
+        // Fund the monitor with WETH (gas)
+        deal(WETH_GAS_TOKEN_ETH, address(monitor), 10 ether);
         uint256 wethBalance = IERC20(WETH_GAS_TOKEN_ETH).balanceOf(
             address(monitor)
         );
         console.log("Monitor WETH balance: ", wethBalance);
+
         vm.selectFork(arbitrumForkId);
 
-        deal(wethAddressArbitrum, address(lpsc), 100 ether); // WETH for gas fees
+        // Fund the LPSC with WETH (gas)
+        deal(wethAddressArbitrum, address(lpsc), 10 ether); // WETH for gas fees
         console.log(
             "WETH balance for LPSC set:",
-            IERC20(wethAddressArbitrum).balanceOf(address(lpsc)) / 1e18
+            IERC20(wethAddressArbitrum).balanceOf(address(lpsc))
         );
 
-        deal(transfer_token_address_Arbitrum, address(lpsc), 10 ether); // Token for collateralization
+        // Fund the LPSC with ETHx (Token to transfer)
+        deal(transfer_token_address_Arbitrum, address(lpsc), 10 ether);
         console.log(
             "Token balance for LPSC set:",
-            IERC20(transfer_token_address_Arbitrum).balanceOf(address(lpsc)) /
-                1e18
+            IERC20(transfer_token_address_Arbitrum).balanceOf(address(lpsc))
         );
 
+        //approve the router to spend the weth
         vm.prank(address(lpsc));
         IERC20(wethAddressArbitrum).approve(
             address(routerAddressArbitrum),
-            3 ether
+            type(uint256).max
         );
-
-        vm.selectFork(ethereumMainnetForkId);
+        //put in LPSC Contract
     }
 
     function testMonitorLiquidationn() public {
+        vm.selectFork(ethereumMainnetForkId);
+
         vm.startPrank(user);
 
         // Step 1: Mint cETH (Deposit ETH)
@@ -161,27 +155,35 @@ contract FullFlowTest is Test {
         require(errors[0] == 0, "Enter markets failed");
 
         // Step 3: Calculate liquidity
-        (, uint256 liquidity, ) = IComptroller(COMPTROLLER_ADDRESS)
-            .getAccountLiquidity(user);
+        (, uint256 liquidity, uint256 shortfall) = IComptroller(
+            COMPTROLLER_ADDRESS
+        ).getAccountLiquidity(user);
+        console.log(" mainnet Liquidity  (in USD):", liquidity);
+        console.log("mainnet shortfall remaining (in USD):", shortfall);
+
         assert(liquidity > 0);
         uint256 daiBalance0 = IERC20(DAI_ADDRESS).balanceOf(user);
-
+        //check this again
         // Log borrow results
         console.log("initial DAI:", daiBalance0 / 1e18); //where is the initial DAI coming from?
 
         // Step 4: Borrow DAI
         uint256 daiToBorrow = 1 * 1e18; // Borrow 1 DAI
         //vm.prank(user);
-        uint256 borrowError = ICToken(CDAI_ADDRESS).borrow(daiToBorrow);
-        require(borrowError == 0, "Borrow failed");
+        uint256 borrowError = ICToken(CDAI_ADDRESS).borrow(daiToBorrow); //we have ceth now we ceth for DAI (compond)
+        require(borrowError == 0, "Borrow failed"); //loan taken of dai
 
         // Assert DAI balance is updated
         uint256 daiBalance = IERC20(DAI_ADDRESS).balanceOf(user);
 
         // Log borrow results
         console.log("DAI borrowed:", daiBalance / 1e18);
-        console.log("Liquidity remaining (in USD):", liquidity / 1e18);
-
+        uint256 monitorBalancebefore = IERC20(transfer_token_address_Mainnet)
+            .balanceOf(address(monitor));
+        console.log(
+            "balance of transfer token on eth mainnet before liquidation:",
+            monitorBalancebefore
+        );
         // Step 3: Mock Comptroller's getAccountLiquidity (Simulate shortfall)
         vm.mockCall(
             COMPTROLLER_ADDRESS,
@@ -189,7 +191,7 @@ contract FullFlowTest is Test {
                 IComptroller.getAccountLiquidity.selector,
                 user
             ),
-            abi.encode(0, 0, 1 ether) // Simulated shortfall of 1 ETH
+            abi.encode(0, 0, 1 ether) // Simulated shortfall of 2 ETH
         );
 
         // Step 4: Call checkUpkeep
@@ -202,22 +204,33 @@ contract FullFlowTest is Test {
         // Step 5: Perform upkeep to send CCIP message
         monitor.performUpkeep(performData);
         console.log("CCIP message sent");
-        console.log(arbitrumForkId);
-        console.log(ethereumMainnetForkId);
-
+        //eth
         //LPSC STARTS FROM HERE_______________________________
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumForkId); //whatever message for the request of funds will happen because of this when we switch to arbitrum
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumForkId);
+        //whatever message for the request of funds will happen because of this when we switch to arbitrum
+        //arb
+        vm.selectFork(ethereumMainnetForkId); //eth
+        //eth
         ccipLocalSimulatorFork.switchChainAndRouteMessage(
             ethereumMainnetForkId
         );
+        //eth
+
         //after switching to wth the funds should be transferred to mainnet and there shouldnt be any need to liquidate
-        uint256 monitorBalance = IERC20(transfer_token_address_Mainnet)
+        uint256 monitorBalanceafter = IERC20(transfer_token_address_Mainnet)
             .balanceOf(address(monitor));
 
         console.log(
             "balance of transfer token on eth mainnet:",
-            monitorBalance
+            monitorBalanceafter
         );
+        assert(monitorBalanceafter > monitorBalancebefore);
+
+        (, uint256 liquidity1, uint256 shortfall1) = IComptroller(
+            COMPTROLLER_ADDRESS
+        ).getAccountLiquidity(user);
+        console.log("liquidity after liquidation:", liquidity1);
+        console.log("shortfall after liquidation:", shortfall1);
         vm.stopPrank();
     }
 }
