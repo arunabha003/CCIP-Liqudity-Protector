@@ -18,24 +18,23 @@ contract DeployEthereumScript is Script {
         0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH on Mainnet
     address constant DAI_ADDRESS = 0x6B175474E89094C44Da98b954EedeAC495271d0F; // DAI
     address constant CDAI_ADDRESS = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643; // cDAI
-    // address constant CETH_ADDRESS = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5; // cETH on Ethereum Mainnet
-    // address public constant CDAI_ADDRESS =
-    //     0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643; // cDai address Ethereum Mainnet
-    // address constant COMPTROLLER_ADDRESS =
-    //     0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B; // Compound Comptroller on Ethereum Mainnet
 
     uint64 constant arbitrumChainSelector = 4949039107694359620; // Arbitrum chain selector
     address constant LPSCArbitrum = 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0; // Deployed Registry address on Arbitrum (replace with actual address)
 
-    //ALWAYS CHANGE RESGISTRY ADDRESS
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-
+        Ultimate ultimate = new Ultimate(
+            CETH_ADDRESS,
+            CDAI_ADDRESS,
+            COMPTROLLER_ADDRESS
+        );
+        console.log("Ultimate deployed at:", address(ultimate));
         // Deploy MonitorCompoundV2
         MonitorCompoundV2 monitor = new MonitorCompoundV2(
             routerAddressMainnet,
-            msg.sender, // Mock user address for testing
+            address(ultimate), // Mock user address for testing
             CDAI_ADDRESS,
             COMPTROLLER_ADDRESS,
             WETH_GAS_TOKEN_ETH,
@@ -44,13 +43,6 @@ contract DeployEthereumScript is Script {
             arbitrumChainSelector
         );
         console.log("MonitorCompoundV2 deployed at:", address(monitor));
-        Ultimate ultimate = new Ultimate(
-            CETH_ADDRESS,
-            CDAI_ADDRESS,
-            COMPTROLLER_ADDRESS,
-            address(monitor)
-        );
-        console.log("Ultimate deployed at:", address(ultimate));
 
         vm.stopBroadcast();
     }

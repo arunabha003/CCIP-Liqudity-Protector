@@ -149,7 +149,6 @@ contract FullFlowTest is Test {
         markets = new address[](1);
         markets[0] = CETH_ADDRESS;
 
-        //vm.prank(user);
         uint256[] memory errors = IComptroller(COMPTROLLER_ADDRESS)
             .enterMarkets(markets);
         require(errors[0] == 0, "Enter markets failed");

@@ -629,6 +629,25 @@ export const ultimateABI = [
       },
       {
         indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "CETHMinted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+      {
+        indexed: false,
         internalType: "address",
         name: "market",
         type: "address",
@@ -676,48 +695,85 @@ export const ultimateABI = [
   },
   {
     inputs: [],
-    name: "cDAI",
-    outputs: [
-      {
-        internalType: "contract ICDAI",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "cETH",
-    outputs: [
-      {
-        internalType: "contract ICETH",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "comptroller",
-    outputs: [
-      {
-        internalType: "contract IComptroller",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "enterMarket",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "getCDAIBalance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "getCETHBalance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "getDAIBalance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "getETHBalance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -747,6 +803,45 @@ export const ultimateABI = [
   },
   {
     inputs: [],
+    name: "cETH",
+    outputs: [
+      {
+        internalType: "contract ICETH",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "cDAI",
+    outputs: [
+      {
+        internalType: "contract ICDAI",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "comptroller",
+    outputs: [
+      {
+        internalType: "contract IComptroller",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "monitorCompoundV2",
     outputs: [
       {
@@ -759,8 +854,9 @@ export const ultimateABI = [
     type: "function",
   },
 ];
-export const ultimateAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
-export const monitorAddress = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
+
+export const ultimateAddress = "0x7E27bCbe2F0eDdA3E0AA12492950a6B8703b00FB";
+export const monitorAddress = "0x9015957A2210BB8B10e27d8BBEEF8d9498f123eF";
 export const LPSCAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
 export const LPSCRegistryAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
 export const LPSCVaultAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512";

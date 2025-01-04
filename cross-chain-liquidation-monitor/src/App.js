@@ -1,20 +1,31 @@
 import React, { useState } from "react";
-import { ultimateABI, ultimateAddress } from "./abi/constants"; // Import the Ultimate contract ABI and address
+import {
+  monitorABI,
+  monitorAddress,
+  ultimateABI,
+  ultimateAddress,
+} from "./abi/constants";
 import "./App.css";
 const ethers = require("ethers");
+
 const App = () => {
-  const [account, setAccount] = useState(null);
+  const [account, setAccount] = useState("");
   const [message, setMessage] = useState("");
   const [amount, setAmount] = useState("");
   const [targetChain, setTargetChain] = useState("");
+  const [provider, setProvider] = useState(null); // Store the provider
+  const [signer, setSigner] = useState(null); // Store the signer
 
-  // Connect Wallet
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
+        setProvider(provider); // Store the provider
         const accounts = await provider.send("eth_requestAccounts", []);
         setAccount(accounts[0]);
+
+        const signer = await provider.getSigner();
+        setSigner(signer); // Store the signer
       } catch (error) {
         console.error("Error connecting wallet:", error);
       }
@@ -23,25 +34,25 @@ const App = () => {
     }
   };
 
-  // Mint cETH
   const mintCETH = async () => {
-    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-      alert("Please enter a valid ETH amount to mint cETH!");
+    if (!signer) {
+      // Check if signer exists
+      alert("Please connect your wallet first.");
       return;
     }
-
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
       const contract = new ethers.Contract(
         ultimateAddress,
         ultimateABI,
         signer
       );
-
-      const tx = await contract.mintCETH({ value: ethers.parseEther(amount) });
+      console.log("contract", contract);
+      const tx = await contract.mintCETH({ value: ethers.parseEther("10") });
       await tx.wait();
-      alert("cETH minted successfully!");
+      console.log("tx", tx);
+      console.log("account", account);
+      const tx1 = await contract.getCETHBalance(ultimateAddress);
+      console.log(tx1);
     } catch (error) {
       console.error("Error minting cETH:", error);
     }
@@ -58,21 +69,33 @@ const App = () => {
         signer
       );
 
-      const tx = await contract.enterMarket();
-      await tx.wait();
+      const tx1 = await contract.enterMarket();
+      console.log(tx1);
       alert("Market entered successfully!");
     } catch (error) {
       console.error("Error entering market:", error);
     }
   };
+  const checkLiquidity = async () => {
+    try {
+      const contract = new ethers.Contract(
+        ultimateAddress,
+        ultimateABI,
+        signer
+      );
+      const [liquidity, shortfall] = await contract.calculateLiquidity(
+        ultimateAddress
+      );
+      console.log("Liquidity:", liquidity);
+      console.log("Shortfall:", shortfall);
+      return { liquidity, shortfall };
+    } catch (error) {
+      console.error("Error checking liquidity:", error);
+    }
+  };
 
   // Borrow DAI
   const borrowDAI = async () => {
-    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount to borrow DAI!");
-      return;
-    }
-
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -82,8 +105,13 @@ const App = () => {
         signer
       );
 
-      const tx = await contract.borrowDAI(ethers.parseUnits(amount, 18)); // Assuming DAI has 18 decimals
-      await tx.wait();
+      const tx = await contract.borrowDAI(ethers.parseEther("0.01"));
+      // await tx.wait();
+      // const tx1 = await contract.getCDAIBalance(ultimateAddress);
+      // console.log(tx1);
+      console.log(tx);
+      const daibalaance = await contract.getDAIBalance(ultimateAddress);
+      console.log(daibalaance);
       alert("DAI borrowed successfully!");
     } catch (error) {
       console.error("Error borrowing DAI:", error);
@@ -91,32 +119,61 @@ const App = () => {
   };
 
   // Initiate Cross-Chain Operation
-  const initiateCrossChainOperation = async () => {
-    if (!targetChain || !message) {
-      alert(
-        "Please enter a target chain and data for the cross-chain operation!"
-      );
-      return;
-    }
-
+  const checkupkeep = async () => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        ultimateAddress,
-        ultimateABI,
-        signer
-      );
+      const contract = new ethers.Contract(monitorAddress, monitorABI, signer);
 
-      const data = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(message)); // Convert message to bytes
-      const tx = await contract.initiateCrossChainOperation(targetChain, data);
-      await tx.wait();
-      alert("Cross-chain operation initiated successfully!");
+      // const [upkeepNeeded, performData] = await contract.checkUpkeep("0x");
+      // console.log("Upkeep needed:", upkeepNeeded);
+      // console.log("Perform data:", performData);
+      const result = await contract.checkUpkeep("0x");
+      console.log("Raw result from checkUpkeep:", result);
+      // Access the tuple properties
+      const upkeepNeeded = result[0];
+      const performData = result[1];
+
+      console.log("Upkeep needed:", upkeepNeeded);
+      console.log("Perform data:", performData);
     } catch (error) {
       console.error("Error initiating cross-chain operation:", error);
     }
   };
-
+  const switchToArbitrum = async () => {
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0xA4B1" }], // Chain ID for Arbitrum One
+      });
+    } catch (switchError) {
+      // If the chain is not added to MetaMask, add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: "0xA4B1",
+                chainName: "Arbitrum One",
+                rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+                blockExplorerUrls: ["https://arbiscan.io"],
+                nativeCurrency: {
+                  name: "ETH",
+                  symbol: "ETH",
+                  decimals: 18,
+                },
+              },
+            ],
+          });
+        } catch (addError) {
+          console.error("Error adding Arbitrum One:", addError);
+        }
+      } else {
+        console.error("Error switching to Arbitrum:", switchError);
+      }
+    }
+  };
   return (
     <div className="App">
       <header className="App-header">
@@ -126,50 +183,32 @@ const App = () => {
         ) : (
           <button onClick={connectWallet}>Connect Wallet</button>
         )}
-
         <div>
           <h2>Mint cETH</h2>
-          <input
-            type="text"
-            placeholder="Amount in ETH"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
+
           <button onClick={mintCETH}>Mint cETH</button>
         </div>
-
         <div>
           <h2>Enter Market</h2>
           <button onClick={enterMarket}>Enter Market</button>
         </div>
-
         <div>
-          <h2>Borrow DAI</h2>
-          <input
-            type="text"
-            placeholder="Amount of DAI"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          <button onClick={borrowDAI}>Borrow DAI</button>
+          <h2>check liquidity</h2>
+          <button onClick={checkLiquidity}>CHekc liquidity</button>
         </div>
 
         <div>
-          <h2>Initiate Cross-Chain Operation</h2>
-          <input
-            type="text"
-            placeholder="Target Chain Address"
-            value={targetChain}
-            onChange={(e) => setTargetChain(e.target.value)}
-          />
-          <textarea
-            placeholder="Message/Data for Cross-Chain Operation"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <button onClick={initiateCrossChainOperation}>
-            Initiate Cross-Chain
-          </button>
+          <h2>Borrow DAI</h2>
+
+          <button onClick={borrowDAI}>Borrow DAI</button>
+        </div>
+        <div>
+          <h2>switchToArbitrum</h2>
+          <button onClick={switchToArbitrum}>switchToArbitrum</button>
+        </div>
+        <div>
+          <h2>check upkeep</h2>
+          <button onClick={checkupkeep}>check upkeep</button>
         </div>
       </header>
     </div>
