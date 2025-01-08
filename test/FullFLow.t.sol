@@ -15,6 +15,8 @@ import {IComptroller} from "../src/interfaces/compound/IComptroller.sol";
 import {MonitorCompoundV2} from "../src/monitors/MonitorCompoundV2.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import "../src/interfaces/ICurve.sol";
+import "../src/interfaces/IUniswap.sol";
 
 contract FullFlowTest is Test {
     MonitorCompoundV2 public monitor;
@@ -22,6 +24,8 @@ contract FullFlowTest is Test {
     LPSCVault public vault;
     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
     LPSCRegistry public registry;
+    ICurvePool public curvePoolETHXtoWETH;
+    IUniswapV2Router02 public uniswap_router;
     // Fork IDs
     uint256 public ethereumMainnetForkId;
     uint256 public arbitrumForkId;
@@ -76,7 +80,6 @@ contract FullFlowTest is Test {
         ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
         vm.makePersistent(address(ccipLocalSimulatorFork));
 
-
         vm.selectFork(arbitrumForkId);
         registry = new LPSCRegistry();
 
@@ -97,37 +100,52 @@ contract FullFlowTest is Test {
         );
         console.log("Monitor contract deployed at: ", address(monitor));
 
+        curvePoolETHXtoWETH = ICurvePool(
+            0xd82C2eB10F4895CABED6EDa6eeee234bd1A9838B
+        );
+
+        uniswap_router = IUniswapV2Router02(
+            0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
+        );
+
         // Fund the user with ETH
         vm.deal(user, 10 ether);
         console.log("User funded with 10 ETH");
 
         // Fund the monitor with WETH (gas)
         deal(WETH_GAS_TOKEN_ETH, address(monitor), 10 ether);
-        uint256 wethBalance = IERC20(WETH_GAS_TOKEN_ETH).balanceOf(address(monitor));
+        uint256 wethBalance = IERC20(WETH_GAS_TOKEN_ETH).balanceOf(
+            address(monitor)
+        );
         console.log("Monitor WETH balance: ", wethBalance);
-
 
         vm.selectFork(arbitrumForkId);
 
         // Fund the LPSC with WETH (gas)
         deal(wethAddressArbitrum, address(lpsc), 10 ether); // WETH for gas fees
-        console.log("WETH balance for LPSC set:",IERC20(wethAddressArbitrum).balanceOf(address(lpsc)));
+        console.log(
+            "WETH balance for LPSC set:",
+            IERC20(wethAddressArbitrum).balanceOf(address(lpsc))
+        );
 
         // Fund the LPSC with ETHx (Token to transfer)
-        deal(transfer_token_address_Arbitrum, address(lpsc), 10 ether); 
-        console.log("Token balance for LPSC set:",IERC20(transfer_token_address_Arbitrum).balanceOf(address(lpsc)));
+        deal(transfer_token_address_Arbitrum, address(lpsc), 10 ether);
+        console.log(
+            "Token balance for LPSC set:",
+            IERC20(transfer_token_address_Arbitrum).balanceOf(address(lpsc))
+        );
 
-         //approve the router to spend the weth
+        //approve the router to spend the weth
         vm.prank(address(lpsc));
-        IERC20(wethAddressArbitrum).approve(address(routerAddressArbitrum),type(uint256).max);
-
-        
+        IERC20(wethAddressArbitrum).approve(
+            address(routerAddressArbitrum),
+            type(uint256).max
+        );
     }
 
     function testMonitorLiquidationn() public {
-
         vm.selectFork(ethereumMainnetForkId);
-        
+
         vm.startPrank(user);
 
         // Step 1: Mint cETH (Deposit ETH)
@@ -198,13 +216,116 @@ contract FullFlowTest is Test {
         );
 
         //after switching to wth the funds should be transferred to mainnet and there shouldnt be any need to liquidate
-        uint256 monitorBalance = IERC20(transfer_token_address_Mainnet)
-            .balanceOf(address(monitor));
+        uint256 transfer_tokens_ETHX_by_Monitor = IERC20(
+            transfer_token_address_Mainnet
+        ).balanceOf(address(monitor));
 
         console.log(
             "balance of transfer token on eth mainnet:",
-            monitorBalance
+            transfer_tokens_ETHX_by_Monitor
+        );
+
+        vm.stopPrank();
+        vm.selectFork(ethereumMainnetForkId);
+
+
+
+        //swapping etherx-> weth then weth to cdai
+        vm.startPrank(address(monitor));
+
+
+
+
+
+        uint256 initialETHX = IERC20(transfer_token_address_Mainnet).balanceOf(
+            address(this)
+        );
+        console.log("Initial ETHX balance: ", initialETHX);
+
+        IERC20(transfer_token_address_Mainnet).approve(
+            0xd82C2eB10F4895CABED6EDa6eeee234bd1A9838B,
+            transfer_tokens_ETHX_by_Monitor
+        );
+        console.log("approval successful");
+
+        console.log(
+            "transfer_tokens_ETHX_by_Monitor before swap: ",
+            transfer_tokens_ETHX_by_Monitor
+        );
+
+        uint256 initialweth = IERC20(wethAddressETHMainnet).balanceOf(
+            address(monitor)
+        );
+        console.log("initail WETH by Monitor: ", initialweth);
+
+        curvePoolETHXtoWETH.exchange(
+            0,
+            1,
+            transfer_tokens_ETHX_by_Monitor,
+            101001111111111
+        );
+        uint256 final_transfer_tokens_ETHX_by_Monitor = IERC20(
+            transfer_token_address_Mainnet
+        ).balanceOf(address(monitor));
+
+        console.log(
+            "final transfer_tokens_ETHX_by_Monitor before swap: ",
+            final_transfer_tokens_ETHX_by_Monitor
+        );
+
+
+
+
+        // console.log("address this : ", address(this)); //FullFlowKaAddress h
+        // console.log("address monitor : ", address(monitor));
+
+
+
+
+        // exchange weth to dai
+
+        uint256 finalWeth = IERC20(wethAddressETHMainnet).balanceOf(
+            address(monitor)
+        );
+        console.log("Final WETH balance before exchange to DAI: ", finalWeth);
+
+        //uniswap dai to weth
+        // token 0 dai
+        // token 1 weth
+        // liquidity pool uniswapV2Pair 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
+
+        //Uniswap
+
+        require(
+            IERC20(uniswap_router.WETH()).approve(
+                address(uniswap_router),
+                finalWeth
+            ),
+            "approve failed."
+        );
+
+
+        address[] memory path = new address[](2);
+        path[0] = uniswap_router.WETH();
+        path[1] = DAI_ADDRESS;
+
+        uniswap_router.swapExactTokensForTokens(
+            finalWeth,
+            0,
+            path,
+            address(monitor),
+            block.timestamp + 3000000
+        );
+        console.log(
+            "transfer complete",
+            IERC20(DAI_ADDRESS).balanceOf(address(monitor))
         );
         vm.stopPrank();
+        
+    
+        //giving liquidity back to lending protocol
+        // ICToken cToken = ICToken(CDAI_ADDRESS);
+        // //
+        //  uint256 borrowError = ICToken(CDAI_ADDRESS).repayBorrowBehalf.value(paisa)(user);
     }
 }
