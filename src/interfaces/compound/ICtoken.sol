@@ -2,12 +2,8 @@
 pragma solidity ^0.8.0;
 
 interface ICToken {
-    function repayBorrowBehalf(
-        address borrower,
-        uint256 repayAmount
-    ) external returns (uint256);
 
-    function repayBorrowBehalf(address borrower) external payable;
+    // function repayBorrowBehalf(address borrower) external payable;
     function borrowBalanceStored(address account) external view returns (uint);
     function mint() external payable;
     function redeem(uint256 redeemTokens) external returns (uint256);
@@ -17,6 +13,14 @@ interface ICToken {
     function borrow(uint256 borrowAmount) external returns (uint256);
     function repayBorrow(uint256 repayAmount) external returns (uint256);
     function balanceOf(address owner) external view returns (uint256);
-    function borrowBalanceCurrent(address account) external returns (uint256);
     function borrowRatePerBlock() external view returns (uint256);
+
+    //DOCS
+    function repayBorrowBehalf(
+        address borrower,
+        uint repayAmount
+    ) external returns (uint);
+
+    function borrowBalanceCurrent(address account) external returns (uint256);
+
 }

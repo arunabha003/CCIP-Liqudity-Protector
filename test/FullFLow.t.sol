@@ -174,6 +174,8 @@ contract FullFlowTest is Test {
         // Log borrow results
         console.log("initial DAI:", daiBalance0 / 1e18); //where is the initial DAI coming from?
 
+        // console.log("cdai any before dai borrowed", IERC20(CDAI_ADDRESS).balanceOf(user));
+
         // Step 4: Borrow DAI
         uint256 daiToBorrow = 1 * 1e18; // Borrow 1 DAI
         //vm.prank(user);
@@ -185,6 +187,8 @@ contract FullFlowTest is Test {
 
         // Log borrow results
         console.log("DAI borrowed:", daiBalance / 1e18);
+        // console.log("cdai any after dai borrowed", IERC20(CDAI_ADDRESS).balanceOf(user));
+
         console.log("Liquidity remaining (in USD):", liquidity / 1e18);
 
         // Step 3: Mock Comptroller's getAccountLiquidity (Simulate shortfall)
@@ -228,14 +232,8 @@ contract FullFlowTest is Test {
         vm.stopPrank();
         vm.selectFork(ethereumMainnetForkId);
 
-
-
         //swapping etherx-> weth then weth to cdai
         vm.startPrank(address(monitor));
-
-
-
-
 
         uint256 initialETHX = IERC20(transfer_token_address_Mainnet).balanceOf(
             address(this)
@@ -273,14 +271,8 @@ contract FullFlowTest is Test {
             final_transfer_tokens_ETHX_by_Monitor
         );
 
-
-
-
         // console.log("address this : ", address(this)); //FullFlowKaAddress h
         // console.log("address monitor : ", address(monitor));
-
-
-
 
         // exchange weth to dai
 
@@ -304,7 +296,6 @@ contract FullFlowTest is Test {
             "approve failed."
         );
 
-
         address[] memory path = new address[](2);
         path[0] = uniswap_router.WETH();
         path[1] = DAI_ADDRESS;
@@ -318,14 +309,34 @@ contract FullFlowTest is Test {
         );
         console.log(
             "transfer complete",
-            IERC20(DAI_ADDRESS).balanceOf(address(monitor))
+            IERC20(DAI_ADDRESS).balanceOf(address(monitor)) / 1e18
         );
-        vm.stopPrank();
-        
-    
+
+        uint256 finalDAI = IERC20(DAI_ADDRESS).balanceOf(address(monitor));
+
+        IERC20(DAI_ADDRESS).approve(CDAI_ADDRESS, finalDAI);
+
+        console.log("user borrow balance before trans : ",cToken.borrowBalanceCurrent(user));
+
         //giving liquidity back to lending protocol
-        // ICToken cToken = ICToken(CDAI_ADDRESS);
-        // //
-        //  uint256 borrowError = ICToken(CDAI_ADDRESS).repayBorrowBehalf.value(paisa)(user);
+        ICToken cToken = ICToken(CDAI_ADDRESS);
+        cToken.repayBorrowBehalf(user, type(uint256).max);
+
+        console.log(
+            "dai left after repay: ",
+            IERC20(DAI_ADDRESS).balanceOf(user) / 1e18
+        );
+
+        // (, uint256 liquidity2, uint shortfall2) = IComptroller(
+        //     COMPTROLLER_ADDRESS
+        // ).getAccountLiquidity(user);
+        // console.log("liquidity after repay: ", liquidity2);
+        // console.log("shortfall after repay: ", shortfall2);
+        vm.stopPrank();
+        console.log(cToken.borrowBalanceCurrent(user));
+
+        console.log("User WETH balance after liquidation: ", );
     }
 }
+
+//forge test --match-contract FullFlowTest -vv
