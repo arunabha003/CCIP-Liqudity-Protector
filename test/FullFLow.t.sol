@@ -316,10 +316,13 @@ contract FullFlowTest is Test {
 
         IERC20(DAI_ADDRESS).approve(CDAI_ADDRESS, finalDAI);
 
-        console.log("user borrow balance before trans : ",cToken.borrowBalanceCurrent(user));
-
         //giving liquidity back to lending protocol
         ICToken cToken = ICToken(CDAI_ADDRESS);
+        console.log(
+            "user borrow balance before trans : ",
+            cToken.borrowBalanceCurrent(user)
+        );
+
         cToken.repayBorrowBehalf(user, type(uint256).max);
 
         console.log(
@@ -335,7 +338,7 @@ contract FullFlowTest is Test {
         vm.stopPrank();
         console.log(cToken.borrowBalanceCurrent(user));
 
-        console.log("User WETH balance after liquidation: ", );
+        // console.log("User WETH balance after liquidation: ", );
     }
 }
 
