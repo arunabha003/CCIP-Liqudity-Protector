@@ -9,6 +9,7 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 import {IComptroller} from "../interfaces/compound/IComptroller.sol";
 import {ICToken} from "../interfaces/compound/ICtoken.sol";
 import {Withdraw} from "../utils/Withdraw.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 
 contract MonitorCompoundV2 is
@@ -27,6 +28,7 @@ contract MonitorCompoundV2 is
     address immutable i_router;
 
     mapping(bytes32 messageId => uint256 amountToRepay) internal requested;
+    mapping(bytes32 messageId => bool reply1) internal reply;
 
     event MessageSent(bytes32 indexed messageId);
 
@@ -85,13 +87,9 @@ contract MonitorCompoundV2 is
             receiver: abi.encode(i_lpsc),
             data: abi.encode(i_tokenAddress, amountNeeded, address(this)),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-<<<<<<< Updated upstream
-            extraArgs: "",
-=======
             extraArgs: Client._argsToBytes(
                 Client.EVMExtraArgsV1({gasLimit: 900000})
             ),  
->>>>>>> Stashed changes
             feeToken: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
            
         });
@@ -108,31 +106,30 @@ contract MonitorCompoundV2 is
         emit MessageSent(messageId);
     }
 
+    //recieves reply
     function _ccipReceive(
         Client.Any2EVMMessage memory receivedMessage
     ) internal override {
+        console.log("reply recieved");
         _isCcipMessageSent = false;
         bytes32 requestMessageId = abi.decode(receivedMessage.data, (bytes32));
         uint256 amountToRepay = requested[requestMessageId];
-<<<<<<< Updated upstream
-
-        IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
-
-        ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
-=======
         reply[requestMessageId] = true;
         
         
 
         // IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
         // ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
->>>>>>> Stashed changes
     }
 
     // --------------GETTER FUNCTIONS-------------------
 
     function isCcipMessageSent() external view returns (bool) {
         return _isCcipMessageSent;
+    }
+
+    function isCcipMessagerecieved(bytes32 x) external view returns (bool) {
+        return reply[x];
     }
 
     function testCcipReceive(
