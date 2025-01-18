@@ -1,27 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-// import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {LPSCRegistry} from "./myLPSCRegistry.sol";
 import {LPSCVault} from "./LPSCVault.sol";
-import {Test, console} from "forge-std/Test.sol";
 
-/**
- * THIS IS AN EXAMPLE CONTRACT THAT USES HARDCODED VALUES FOR CLARITY.
- * THIS IS AN EXAMPLE CONTRACT THAT USES UN-AUDITED CODE.
- * DO NOT USE THIS CODE IN PRODUCTION.
- */
+
 
 contract LPSC is LPSCVault, CCIPReceiver {
     address public router;
-    address constant registryAddress =
-        0x2e234DAe75C793f67A35089C9d99245E1C58470b;
-    address constant aavePoolAddress =
-        0x794a61358D6845594F94dc1DB02A252b5b4814aD; // Aave V3 Pool on Arbitrum
+    address constant registryAddress =0x2e234DAe75C793f67A35089C9d99245E1C58470b;
 
     event ReplySent(
         bytes32 replyMessageId,
@@ -46,8 +37,7 @@ contract LPSC is LPSCVault, CCIPReceiver {
     ) CCIPReceiver(_router) LPSCVault(_vault) {
         router = _router;
 
-        // bool success=LinkTokenInterface(LINK).approve(_router, 1 ether);
-        // require(success, "Approval failed");
+
     }
 
     function _ccipReceive(
@@ -59,6 +49,10 @@ contract LPSC is LPSCVault, CCIPReceiver {
             receivedMessage.data,
             (address, uint256, address)
         );
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
         reply(tokenAddress, amount, sourceChainSelector, sender, messageId);
     }
@@ -70,9 +64,7 @@ contract LPSC is LPSCVault, CCIPReceiver {
         address sender,
         bytes32 messageId
     ) public onlyRouterOrOwner {
-        // address tokenToReturn = s_destinationToSourceMap[
-        //     keccak256(abi.encodePacked(tokenAddress, sourceChainSelector))
-        // ];
+
 
         //Address of the ETHX in Arbitrum
         address tokenToReturn = LPSCRegistry(registryAddress)
@@ -105,8 +97,14 @@ contract LPSC is LPSCVault, CCIPReceiver {
             feeToken: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1 //weth arbitrum
         });
 
+<<<<<<< Updated upstream
         bytes32 replyMessageId = IRouterClient(router).ccipSend(
             sourceChainSelector,
+=======
+
+        bytes32 replyMessageId = IRouterClient(router).ccipSend( //the error is here check this
+            5009297550715157269,
+>>>>>>> Stashed changes
             messageReply
         );
 

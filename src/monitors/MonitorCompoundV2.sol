@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.sol";
-// import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -11,11 +10,7 @@ import {IComptroller} from "../interfaces/compound/IComptroller.sol";
 import {ICToken} from "../interfaces/compound/ICtoken.sol";
 import {Withdraw} from "../utils/Withdraw.sol";
 
-/**
- * THIS IS AN EXAMPLE CONTRACT THAT USES HARDCODED VALUES FOR CLARITY.
- * THIS IS AN EXAMPLE CONTRACT THAT USES UN-AUDITED CODE.
- * DO NOT USE THIS CODE IN PRODUCTION.
- */
+
 contract MonitorCompoundV2 is
     AutomationCompatibleInterface,
     CCIPReceiver,
@@ -54,7 +49,6 @@ contract MonitorCompoundV2 is
         i_sourceChainSelector = sourceChainSelector;
         i_router = router;
 
-        // LinkTokenInterface(i_link).approve(i_router, type(uint256).max);
         IERC20(i_gas_Token).approve(i_router, type(uint256).max);
     }
 
@@ -91,9 +85,15 @@ contract MonitorCompoundV2 is
             receiver: abi.encode(i_lpsc),
             data: abi.encode(i_tokenAddress, amountNeeded, address(this)),
             tokenAmounts: new Client.EVMTokenAmount[](0),
+<<<<<<< Updated upstream
             extraArgs: "",
+=======
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: 900000})
+            ),  
+>>>>>>> Stashed changes
             feeToken: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
-            // feeToken:address(0)
+           
         });
 
         bytes32 messageId = IRouterClient(i_router).ccipSend(
@@ -114,10 +114,19 @@ contract MonitorCompoundV2 is
         _isCcipMessageSent = false;
         bytes32 requestMessageId = abi.decode(receivedMessage.data, (bytes32));
         uint256 amountToRepay = requested[requestMessageId];
+<<<<<<< Updated upstream
 
         IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
 
         ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
+=======
+        reply[requestMessageId] = true;
+        
+        
+
+        // IERC20(i_tokenAddress).approve(i_cTokenAddress, amountToRepay);
+        // ICToken(i_cTokenAddress).repayBorrowBehalf(i_onBehalfOf, amountToRepay);
+>>>>>>> Stashed changes
     }
 
     // --------------GETTER FUNCTIONS-------------------

@@ -1,3 +1,12 @@
-ds-test/=lib/forge-std/lib/ds-test/src/
+@chainlink/contracts/=node_modules/@chainlink/contracts/
+@chainlink/contracts-ccip/=node_modules/@chainlink/contracts-ccip/
+@chainlink/local/=lib/chainlink-local/
 forge-std/=lib/forge-std/src/
-
+@chainlink/local/src/=lib/chainlink-local/src/
+ccip/=lib/chainlink-local/lib/ccip/
+chainlink-brownie-contracts/=lib/chainlink-local/lib/chainlink-brownie-contracts/contracts/src/v0.6/vendor/@arbitrum/nitro-contracts/src/
+chainlink-local/=lib/chainlink-local/src/
+ds-test/=lib/forge-std/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+openzeppelin/=lib/openzeppelin-contracts/contracts/
